@@ -360,6 +360,9 @@ export const VoiceInterviewScreen: React.FC<VoiceInterviewScreenProps> = ({
 
   const progress = simulator.getProgress();
 
+  // Safe participant count - this was the source of the error
+  const participantCount = room?.participants?.size || 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-6">
@@ -476,7 +479,7 @@ export const VoiceInterviewScreen: React.FC<VoiceInterviewScreenProps> = ({
 
               <div className="flex items-center space-x-3">
                 <div className="text-sm text-gray-600">
-                  Participants: {room?.participants.size || 0}
+                  Participants: {participantCount}
                 </div>
                 <Users className="w-5 h-5 text-gray-400" />
               </div>
@@ -648,6 +651,12 @@ export const VoiceInterviewScreen: React.FC<VoiceInterviewScreenProps> = ({
                     <span className="text-blue-700">Has Props:</span>
                     <span className={livekitProps ? 'text-green-600' : 'text-red-600'}>
                       {livekitProps ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Participants:</span>
+                    <span className="text-blue-900">
+                      {participantCount}
                     </span>
                   </div>
                   {voiceSession && (
