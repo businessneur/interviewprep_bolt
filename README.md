@@ -4,6 +4,14 @@ A comprehensive AI-powered interview practice application that uses Large Langua
 
 ## Features
 
+### 🔐 **Authentication System**
+- **Email/Password Authentication** with Supabase
+- **Google OAuth Integration** (when configured)
+- **Password Reset** via email
+- **Email Confirmation** for new accounts
+- **Protected Routes** - interview features only available when logged in
+- **User Profile Management** with avatar support
+
 ### 🎙️ **LiveKit Voice Interviews**
 - **Real-time voice communication** using LiveKit WebRTC infrastructure
 - **AI-powered voice interviewer** that speaks questions and listens to responses
@@ -16,7 +24,7 @@ A comprehensive AI-powered interview practice application that uses Large Langua
 - Dynamic question generation based on your specific topic, experience level, and interview style
 - Contextual follow-up questions that adapt to your responses
 - Company-specific scenarios when target company is provided
-- Support for multiple LLM providers (OpenAI GPT-4, Anthropic Claude)
+- Support for multiple LLM providers (OpenAI GPT-4, Anthropic Claude, Google Gemini)
 
 ### 🎯 **Interview Types**
 - **Technical Interviews**: Code problems, system design, technical concepts
@@ -44,8 +52,9 @@ A comprehensive AI-powered interview practice application that uses Large Langua
 
 ### Prerequisites
 - Node.js 18+ and npm
-- An API key from either OpenAI or Anthropic
-- LiveKit Cloud account or self-hosted LiveKit server
+- An API key from either OpenAI, Anthropic, or Google Gemini
+- LiveKit Cloud account or self-hosted LiveKit server (for voice interviews)
+- Supabase account (for authentication)
 - Microphone access for voice interviews
 
 ### 1. Clone and Install Dependencies
@@ -63,8 +72,12 @@ cp .env.example .env
 Edit `.env` file with your configuration:
 ```env
 # Choose your LLM provider
-LLM_PROVIDER=openai
-OPENAI_API_KEY=your_openai_api_key_here
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# OR use OpenAI
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=your_openai_api_key_here
 
 # OR use Anthropic Claude
 # LLM_PROVIDER=anthropic
@@ -75,12 +88,65 @@ LIVEKIT_API_KEY=your_livekit_api_key
 LIVEKIT_API_SECRET=your_livekit_api_secret
 LIVEKIT_WS_URL=wss://your-livekit-server.com
 
+# Supabase Configuration for Authentication
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
 # Server Configuration
 PORT=3001
 VITE_API_URL=http://localhost:3001/api
 ```
 
-### 3. LiveKit Setup
+### 3. Supabase Setup
+
+#### Create Supabase Project
+1. Sign up at [supabase.com](https://supabase.com)
+2. Create a new project
+3. Wait for initialization (~2 minutes)
+4. Go to Settings > API to get your project URL and anon key
+5. Add them to your `.env` file
+
+#### Set Up Database Tables
+Run this SQL in your Supabase SQL Editor:
+
+```sql
+-- Create profiles table
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  full_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY (id)
+);
+
+-- Enable RLS
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Users can view own profile" ON profiles
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert own profile" ON profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+```
+
+#### Configure Google OAuth (Optional)
+1. In Supabase dashboard: Authentication > Providers
+2. Enable Google provider
+3. Add your Google OAuth credentials:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing
+   - Enable Google+ API
+   - Create OAuth 2.0 credentials
+   - Add authorized redirect URI: `https://your-project-ref.supabase.co/auth/v1/callback`
+4. Copy Client ID and Client Secret to Supabase
+
+### 4. LiveKit Setup (Optional - for Voice Interviews)
 
 #### Option A: LiveKit Cloud (Recommended)
 1. Sign up at [LiveKit Cloud](https://cloud.livekit.io/)
@@ -93,11 +159,11 @@ VITE_API_URL=http://localhost:3001/api
 2. Configure your server URL in the `.env` file
 3. Set up your API credentials
 
-### 4. Start the Application
+### 5. Start the Application
 
-**Full Mode (with LLM backend and LiveKit):**
+**Full Mode (with LLM backend, Authentication, and LiveKit):**
 ```bash
-# Terminal 1: Start the backend server with LiveKit support
+# Terminal 1: Start the backend server
 npm run server
 
 # Terminal 2: Start the frontend development server
@@ -111,178 +177,56 @@ npm run server  # Terminal 1
 npm run dev     # Terminal 2
 ```
 
-### 5. Access the Application
+### 6. Access the Application
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3001
 - Health Check: http://localhost:3001/api/health
 - LiveKit Config Check: http://localhost:3001/api/livekit/config
 
-## Architecture
+## Authentication Flow
 
-### Frontend (React + TypeScript + LiveKit)
-- **Configuration Screen**: Interview setup and voice/text mode selection
-- **Voice Interview Screen**: Real-time voice communication with AI interviewer
-- **Text Interview Screen**: Traditional text-based interview (fallback)
-- **Analytics Screen**: Performance analysis with voice session insights
-- **LiveKit Integration**: Real-time audio streaming and communication
-- **Speech Recognition**: Browser-based speech-to-text with LiveKit audio
+### Registration Process
+1. User fills out registration form with email, password, and full name
+2. System checks for duplicate emails and prevents registration
+3. Confirmation email sent to user
+4. User clicks confirmation link to activate account
+5. User can then sign in
 
-### Backend (Node.js + Express + LiveKit Server SDK)
-- **LLM Service**: Unified interface for multiple LLM providers
-- **LiveKit Service**: Room management, token generation, webhook handling
-- **Voice Interview Service**: Session management, audio processing, real-time question flow
-- **Question Generation**: Context-aware question creation with voice timing
-- **Response Analysis**: AI-powered feedback with audio quality metrics
-- **Analytics Engine**: Comprehensive performance evaluation including voice metrics
+### Sign-In Options
+1. **Email/Password**: Traditional authentication
+2. **Google OAuth**: One-click sign-in (when configured)
 
-### LiveKit Integration
-- **Real-time Communication**: WebRTC-based audio streaming
-- **Room Management**: Dynamic interview room creation and management
-- **Token-based Authentication**: Secure participant access control
-- **Webhook Integration**: Real-time event handling and session monitoring
-- **Audio Quality Optimization**: Echo cancellation, noise suppression, auto-gain control
-
-## API Endpoints
-
-### Text-based Interview Endpoints
-```
-POST /api/generate-question          # Generate interview questions
-POST /api/generate-followup          # Generate follow-up questions
-POST /api/analyze-response           # Analyze text responses
-POST /api/generate-analytics         # Generate comprehensive analytics
-```
-
-### Voice Interview Endpoints
-```
-POST /api/voice-interview/start                    # Start voice interview session
-POST /api/voice-interview/:sessionId/response      # Process voice response
-POST /api/voice-interview/:sessionId/followup      # Generate voice follow-up
-POST /api/voice-interview/:sessionId/pause         # Pause voice session
-POST /api/voice-interview/:sessionId/resume        # Resume voice session
-POST /api/voice-interview/:sessionId/end           # End voice session
-GET  /api/voice-interview/:sessionId/status        # Get session status
-POST /api/voice-interview/:sessionId/reconnect     # Reconnect to session
-```
-
-### LiveKit Management
-```
-GET  /api/livekit/config            # Check LiveKit configuration
-POST /api/livekit/webhook           # Handle LiveKit webhooks
-GET  /api/voice-interview/sessions/active  # Get active sessions (admin)
-```
-
-## Voice Interview Features
-
-### Real-time Communication
-- **Low-latency audio**: Sub-100ms audio transmission
-- **Adaptive bitrate**: Automatic quality adjustment based on connection
-- **Echo cancellation**: Advanced audio processing for clear communication
-- **Noise suppression**: Background noise filtering
-- **Connection recovery**: Automatic reconnection on network issues
-
-### AI Voice Interviewer
-- **Natural conversation flow**: AI responds with appropriate timing
-- **Voice synthesis**: Text-to-speech for AI questions (future enhancement)
-- **Contextual responses**: AI adapts based on voice tone and pace
-- **Real-time transcription**: Speech-to-text for immediate analysis
-
-### Session Management
-- **Persistent sessions**: Resume interrupted interviews
-- **Session recording**: Audio recording for later review (optional)
-- **Multi-device support**: Switch devices during interview
-- **Session analytics**: Detailed voice interaction metrics
-
-## Configuration Options
-
-### Interview Modes
-- **Voice Interview**: Full LiveKit-powered voice communication
-- **Text Interview**: Traditional text-based interview (fallback)
-- **Hybrid Mode**: Voice input with text backup
-
-### Voice Settings
-- **Audio Quality**: Configurable bitrate and sample rate
-- **Noise Suppression**: Adjustable noise filtering
-- **Echo Cancellation**: Configurable echo removal
-- **Auto Gain Control**: Automatic volume adjustment
-
-### Interview Styles
-- Technical Interview
-- HR Interview  
-- Behavioral Interview
-- Salary Negotiation
-- Case Study Interview
-
-### Experience Levels
-- Fresher (0-1 years)
-- Junior (1-3 years)
-- Mid-Level (3-6 years)
-- Senior (6+ years)
-- Lead/Manager (8+ years)
-
-## Deployment
-
-### Production Deployment
-1. **Backend Deployment**:
-   ```bash
-   npm run build
-   # Deploy to your preferred platform (AWS, GCP, Azure, etc.)
-   ```
-
-2. **LiveKit Configuration**:
-   - Use LiveKit Cloud for production
-   - Configure proper CORS and security settings
-   - Set up webhook endpoints for monitoring
-
-3. **Environment Variables**:
-   ```env
-   NODE_ENV=production
-   LIVEKIT_WS_URL=wss://your-production-livekit-server.com
-   # Add production API keys
-   ```
-
-### Docker Deployment
-```dockerfile
-# Dockerfile example for backend
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3001
-CMD ["npm", "run", "server"]
-```
-
-## Monitoring and Analytics
-
-### LiveKit Monitoring
-- **Connection Quality**: Real-time connection metrics
-- **Audio Quality**: Bitrate, packet loss, jitter monitoring
-- **Session Duration**: Interview length and completion rates
-- **Error Tracking**: Connection failures and recovery metrics
-
-### Interview Analytics
-- **Voice Metrics**: Speaking pace, pause analysis, confidence indicators
-- **Response Quality**: AI-powered content analysis
-- **Technical Performance**: Audio quality impact on interview performance
-- **Completion Rates**: Success metrics for voice vs text interviews
-
-## Security Considerations
-
-### LiveKit Security
-- **Token-based Authentication**: Secure room access control
-- **Time-limited Tokens**: Automatic token expiration
-- **Room Isolation**: Secure participant separation
-- **Webhook Verification**: Signed webhook payloads
-
-### API Security
-- **API Key Protection**: Server-side credential management
-- **Rate Limiting**: Protection against API abuse
-- **Input Validation**: Comprehensive request validation
-- **CORS Configuration**: Proper cross-origin setup
+### Error Handling
+- Duplicate email registration prevention
+- Clear error messages for authentication failures
+- Graceful handling of unconfirmed emails
+- Google OAuth configuration detection
 
 ## Troubleshooting
 
-### Common Issues
+### Authentication Issues
+
+1. **Google Sign-In Not Working**:
+   ```
+   Error: "Unsupported provider: provider is not enabled"
+   ```
+   **Solution**: Configure Google OAuth in Supabase:
+   - Go to Supabase Dashboard > Authentication > Providers
+   - Enable Google provider
+   - Add your Google OAuth credentials
+
+2. **Duplicate Email Registration**:
+   ```
+   Error: User tries to register with existing email
+   ```
+   **Solution**: The system now prevents this and shows a helpful error message with a link to the login page.
+
+3. **Email Confirmation Issues**:
+   - Check spam folder for confirmation emails
+   - Ensure email confirmation is enabled in Supabase settings
+   - Verify SMTP settings in Supabase
+
+### LiveKit Issues
 
 1. **LiveKit Connection Failed**:
    ```bash
@@ -299,40 +243,93 @@ CMD ["npm", "run", "server"]
    - Verify HTTPS connection (required for microphone access)
    - Test audio devices in browser settings
 
-3. **Voice Interview Not Starting**:
-   - Ensure LiveKit credentials are configured
-   - Check backend logs for connection errors
-   - Verify WebSocket URL is accessible
+### General Issues
 
-### Debug Mode
-```bash
-# Enable debug logging
-DEBUG=livekit* npm run server
-```
+1. **Backend Not Starting**:
+   - Ensure all required environment variables are set
+   - Check for port conflicts (default: 3001)
+   - Verify API keys are valid
 
-## Future Enhancements
+2. **Database Connection Issues**:
+   - Verify Supabase URL and anon key
+   - Check if profiles table exists
+   - Ensure RLS policies are set up correctly
 
-### Planned Features
-- **Video Interviews**: Full video communication support
-- **AI Voice Synthesis**: Text-to-speech for AI interviewer
-- **Multi-language Support**: International interview practice
-- **Group Interviews**: Multi-participant interview scenarios
-- **Interview Recording**: Session playback and review
-- **Advanced Analytics**: ML-powered voice analysis and insights
-- **Mobile App**: Native mobile application with voice support
+## Architecture
 
-### Integration Roadmap
-- **Calendar Integration**: Schedule voice interviews
-- **CRM Integration**: Connect with recruitment platforms
-- **Learning Management**: Structured interview training programs
-- **Enterprise Features**: Team management and analytics dashboards
+### Frontend (React + TypeScript + Supabase + LiveKit)
+- **Authentication Screens**: Login, register, forgot password with beautiful UI
+- **Configuration Screen**: Interview setup and voice/text mode selection
+- **Voice Interview Screen**: Real-time voice communication with AI interviewer
+- **Text Interview Screen**: Traditional text-based interview (fallback)
+- **Analytics Screen**: Performance analysis with voice session insights
+- **Header Component**: User profile dropdown with sign-out functionality
+
+### Backend (Node.js + Express + LiveKit Server SDK)
+- **LLM Service**: Unified interface for multiple LLM providers
+- **LiveKit Service**: Room management, token generation, webhook handling
+- **Voice Interview Service**: Session management, audio processing, real-time question flow
+- **Question Generation**: Context-aware question creation with voice timing
+- **Response Analysis**: AI-powered feedback with audio quality metrics
+- **Analytics Engine**: Comprehensive performance evaluation including voice metrics
+
+### Database (Supabase PostgreSQL)
+- **Authentication**: Built-in Supabase Auth with email/password and OAuth
+- **User Profiles**: Custom profiles table with user metadata
+- **Row Level Security**: Secure data access with RLS policies
+
+## Security Features
+
+### Authentication Security
+- **Supabase Auth**: Industry-standard authentication with JWT tokens
+- **Email Verification**: Required for new accounts
+- **Password Requirements**: Minimum 6 characters
+- **OAuth Security**: Secure Google OAuth integration
+- **Session Management**: Automatic token refresh and secure logout
+
+### API Security
+- **Protected Routes**: Interview features require authentication
+- **CORS Configuration**: Proper cross-origin setup
+- **Input Validation**: Comprehensive request validation
+- **Rate Limiting**: Protection against API abuse
+
+### LiveKit Security
+- **Token-based Authentication**: Secure room access control
+- **Time-limited Tokens**: Automatic token expiration
+- **Room Isolation**: Secure participant separation
+- **Webhook Verification**: Signed webhook payloads
+
+## Deployment
+
+### Production Deployment
+1. **Frontend Deployment**:
+   ```bash
+   npm run build
+   # Deploy dist/ folder to your hosting provider
+   ```
+
+2. **Backend Deployment**:
+   ```bash
+   # Deploy to your preferred platform (AWS, GCP, Azure, etc.)
+   # Ensure all environment variables are set in production
+   ```
+
+3. **Supabase Configuration**:
+   - Update allowed origins in Supabase settings
+   - Configure production OAuth redirect URLs
+   - Set up custom SMTP for production emails
+
+4. **LiveKit Configuration**:
+   - Use LiveKit Cloud for production
+   - Configure proper CORS and security settings
+   - Set up webhook endpoints for monitoring
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests for voice features if applicable
+4. Add tests for authentication and voice features if applicable
 5. Submit a pull request
 
 ### Development Setup
@@ -343,11 +340,11 @@ npm install
 # Start development with hot reload
 npm run dev
 
-# Run tests
-npm test
+# Run backend server
+npm run server
 
+# Test authentication flow
 # Test LiveKit integration
-npm run test:livekit
 ```
 
 ## License
@@ -357,6 +354,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For issues related to:
+- **Authentication**: Check Supabase dashboard and logs
 - **LiveKit Integration**: Check [LiveKit Documentation](https://docs.livekit.io/)
 - **Voice Features**: Review browser microphone permissions
 - **API Issues**: Check backend logs and health endpoints
