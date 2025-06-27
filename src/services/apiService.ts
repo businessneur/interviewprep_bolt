@@ -1,14 +1,32 @@
 import axios from 'axios';
+import { convertKeysToSnake, convertKeysToCamel } from '../utils/caseConversion';
 import { InterviewConfig, AnalyticsData, InterviewResponse } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const PYTHON_API_BASE = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = PYTHON_API_BASE;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 120000, // Increase this value to 120 seconds (2 minutes)
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Request interceptor to convert camelCase to snake_case
+apiClient.interceptors.request.use((config) => {
+  if (config.data) {
+    config.data = convertKeysToSnake(config.data);
+  }
+  return config;
+});
+
+// Response interceptor to convert snake_case to camelCase
+apiClient.interceptors.response.use((response) => {
+  if (response.data) {
+    response.data = convertKeysToCamel(response.data);
+  }
+  return response;
 });
 
 export interface QuestionGenerationRequest {
@@ -79,15 +97,68 @@ export class APIService {
   static async checkHealth(): Promise<boolean> {
     try {
       const response = await apiClient.get('/health');
-      return response.data.status === 'OK';
+      return response.data.status === 'OK' || response.status === 200;
     } catch (error) {
-      // Silently handle network errors for health checks
-      // This is expected when backend is not running
       return false;
     }
   }
 
-  // Generic HTTP methods for voice interview service
+  // Python backend specific endpoints
+  static async startInterview(config: InterviewConfig): Promise<any> {
+    try {
+      const response = await apiClient.post('/interview/start', { config });
+      return response.data;
+    } catch (error) {
+      console.error('Error starting interview:', error);
+      throw new Error('Failed to start interview.');
+    }
+  }
+
+  static async submitAnswer(interviewId: string, questionId: string, answer: string): Promise<any> {
+    try {
+      const response = await apiClient.post('/interview/submit-answer', {
+        interviewId,
+        questionId,
+        answer
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error submitting answer:', error);
+      throw new Error('Failed to submit answer.');
+    }
+  }
+
+  static async getNextQuestion(interviewId: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/interview/${interviewId}/next-question`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting next question:', error);
+      throw new Error('Failed to get next question.');
+    }
+  }
+
+  static async endInterview(interviewId: string): Promise<any> {
+    try {
+      const response = await apiClient.post(`/interview/${interviewId}/end`);
+      return response.data;
+    } catch (error) {
+      console.error('Error ending interview:', error);
+      throw new Error('Failed to end interview.');
+    }
+  }
+
+  static async getInterviewResults(interviewId: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/interview/${interviewId}/results`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting interview results:', error);
+      throw new Error('Failed to get interview results.');
+    }
+  }
+
+  // Generic HTTP methods
   static async get(url: string): Promise<any> {
     try {
       return await apiClient.get(url);

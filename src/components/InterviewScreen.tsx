@@ -15,7 +15,6 @@ import {
   Wifi,
   WifiOff,
   AlertCircle,
-  Phone,
   Monitor,
   Brain,
   Zap,
@@ -25,8 +24,6 @@ import { InterviewConfig } from '../types';
 import { AIInterviewSimulator } from '../utils/aiSimulator';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { APIService } from '../services/apiService';
-import { VoiceInterviewService } from '../services/voiceInterviewService';
-import { VoiceInterviewScreen } from './VoiceInterviewScreen';
 
 interface InterviewScreenProps {
   config: InterviewConfig;
@@ -39,204 +36,17 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   onEndInterview,
   onBackToConfig
 }) => {
-  const [interviewMode, setInterviewMode] = useState<'text' | 'voice' | null>(null);
-  const [livekitAvailable, setLivekitAvailable] = useState(false);
-  const [checkingLivekit, setCheckingLivekit] = useState(true);
-
-  // Check LiveKit availability on mount
-  useEffect(() => {
-    checkLivekitAvailability();
-  }, []);
-
-  const checkLivekitAvailability = async () => {
-    try {
-      const config = await VoiceInterviewService.checkLiveKitConfig();
-      setLivekitAvailable(config.configured);
-    } catch (error) {
-      console.error('Error checking LiveKit config:', error);
-      setLivekitAvailable(false);
-    } finally {
-      setCheckingLivekit(false);
-    }
-  };
-
-  // If mode is selected, render the appropriate interview screen
-  if (interviewMode === 'voice') {
-    return (
-      <VoiceInterviewScreen
-        config={config}
-        onEndInterview={onEndInterview}
-        onBackToConfig={onBackToConfig}
-      />
-    );
-  }
-
-  if (interviewMode === 'text') {
-    return (
-      <TextInterviewScreen
-        config={config}
-        onEndInterview={onEndInterview}
-        onBackToConfig={onBackToConfig}
-      />
-    );
-  }
-
-  // Mode selection screen
+  // Only show text interview mode since Python backend doesn't support LiveKit
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Choose Your Interview Mode
-            </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Select how you'd like to conduct your {config.style} interview practice session
-            </p>
-            <div className="mt-4 inline-flex items-center px-4 py-2 bg-blue-50 rounded-full text-sm text-blue-800">
-              <Clock className="w-4 h-4 mr-2" />
-              Duration: {config.duration} minutes • Estimated Questions: {Math.floor(config.duration / 5)} - {Math.floor(config.duration / 3)}
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {checkingLivekit && (
-            <div className="text-center mb-8">
-              <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Checking voice interview availability...</p>
-            </div>
-          )}
-
-          {/* Mode Selection Cards */}
-          {!checkingLivekit && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              {/* Voice Interview Mode */}
-              <div className={`bg-white rounded-3xl shadow-xl p-8 border-2 transition-all hover:shadow-2xl ${
-                livekitAvailable 
-                  ? 'border-green-200 hover:border-green-300 cursor-pointer' 
-                  : 'border-gray-200 opacity-75'
-              }`}>
-                <div className="text-center">
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 ${
-                    livekitAvailable ? 'bg-green-600 text-white' : 'bg-gray-400 text-white'
-                  }`}>
-                    <Phone className="w-8 h-8" />
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    Voice Interview
-                  </h3>
-                  
-                  <p className="text-gray-600 mb-6">
-                    Real-time voice conversation with AI interviewer using LiveKit technology. 
-                    Practice natural speaking and get immediate feedback.
-                  </p>
-
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                      Real-time voice communication
-                    </div>
-                    <div className="flex items-center text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                      Speech-to-text transcription
-                    </div>
-                    <div className="flex items-center text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                      Natural conversation flow
-                    </div>
-                    <div className="flex items-center text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                      Audio quality analysis
-                    </div>
-                  </div>
-
-                  {livekitAvailable ? (
-                    <button
-                      onClick={() => setInterviewMode('voice')}
-                      className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all"
-                    >
-                      <Phone className="w-4 h-4 mr-2" />
-                      Start Voice Interview
-                    </button>
-                  ) : (
-                    <div className="text-center">
-                      <div className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm mb-3">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        LiveKit Not Configured
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        Voice interviews require LiveKit configuration in the backend
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Text Interview Mode */}
-              <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-blue-200 hover:border-blue-300 transition-all hover:shadow-2xl cursor-pointer">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-2xl mb-6">
-                    <Monitor className="w-8 h-8" />
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    Text Interview
-                  </h3>
-                  
-                  <p className="text-gray-600 mb-6">
-                    Traditional text-based interview with AI-generated questions. 
-                    Type your responses and get detailed feedback.
-                  </p>
-
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                      AI-powered question generation
-                    </div>
-                    <div className="flex items-center text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                      Instant response processing
-                    </div>
-                    <div className="flex items-center text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                      Works offline
-                    </div>
-                    <div className="flex items-center text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                      Comprehensive analytics
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setInterviewMode('text')}
-                    className="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all"
-                  >
-                    <Monitor className="w-4 h-4 mr-2" />
-                    Start Text Interview
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Back Button */}
-          <div className="text-center">
-            <button
-              onClick={onBackToConfig}
-              className="inline-flex items-center px-6 py-3 bg-gray-600 text-white font-semibold rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all"
-            >
-              ← Back to Configuration
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <TextInterviewScreen
+      config={config}
+      onEndInterview={onEndInterview}
+      onBackToConfig={onBackToConfig}
+    />
   );
 };
 
-// Text Interview Component (optimized for performance)
+// Text Interview Component (optimized for Python backend)
 const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
   config,
   onEndInterview,
@@ -333,7 +143,7 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
   const endInterview = () => {
     setIsInterviewActive(false);
     stopListening();
-    simulator.endInterviewEarly(); // Mark as ended early
+    simulator.endInterviewEarly();
     onEndInterview(simulator);
   };
 
@@ -378,7 +188,6 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
       }
     } catch (error) {
       console.error('❌ Error loading question:', error);
-      // Force fallback mode if there's an error
       simulator.forceFallbackMode();
       try {
         const fallbackQuestion = await simulator.getNextQuestion();
@@ -409,7 +218,6 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
       console.log('📝 Submitting response...');
       const startTime = Date.now();
       
-      // Submit response (optimized - no real-time analysis)
       await simulator.submitResponse(textResponse.trim());
       
       const duration = Date.now() - startTime;
@@ -479,7 +287,7 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center">
                   <Monitor className="w-6 h-6 mr-2 text-blue-600" />
-                  Text Interview - {config.style.charAt(0).toUpperCase() + config.style.slice(1).replace('-', ' ')}
+                  Interview Practice - {config.style.charAt(0).toUpperCase() + config.style.slice(1).replace('-', ' ')}
                 </h1>
                 <p className="text-gray-600">Topic: {config.topic}</p>
                 {config.companyName && (
@@ -500,7 +308,7 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
                       {isConnected ? (
                         <div className="flex items-center text-green-600 text-sm">
                           <Brain className="w-4 h-4 mr-1" />
-                          {simulator.isUsingAgentic() ? 'Agentic AI' : 'Fallback Mode'}
+                          Python Backend Connected
                         </div>
                       ) : (
                         <div className="flex items-center text-amber-600 text-sm">
@@ -522,11 +330,11 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
                   <div className="text-blue-800 text-sm">
                     <p className="font-medium mb-1">Running in Offline Mode</p>
                     <p className="mb-2">
-                      The AI backend is not connected. You can still practice with pre-defined questions, 
-                      or start the backend server for AI-powered interviews.
+                      The Python backend is not connected. You can still practice with pre-defined questions, 
+                      or start the Python backend server for AI-powered interviews.
                     </p>
                     <p className="text-xs text-blue-600">
-                      To enable AI features: Run <code className="bg-blue-100 px-1 rounded">npm run server</code> in a separate terminal.
+                      To enable AI features: Start your Python backend server on port 8000.
                     </p>
                   </div>
                   <button
@@ -539,28 +347,13 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
               </div>
             )}
 
-            {/* Performance Optimization Alert */}
-            {isConnected && simulator.isUsingAgentic() && (
-              <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                <div className="flex items-center">
-                  <Zap className="w-5 h-5 text-purple-600 mr-3" />
-                  <div className="text-purple-800 text-sm">
-                    <p className="font-medium">Performance Optimized</p>
-                    <p className="text-xs text-purple-600 mt-1">
-                      Questions are pre-generated for faster responses. Comprehensive analysis happens at the end.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Loading Question Alert */}
             {isLoadingQuestion && (
               <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
                 <div className="flex items-center">
                   <Brain className="w-5 h-5 text-purple-600 mr-3 animate-pulse" />
                   <div className="text-purple-800 text-sm">
-                    <p className="font-medium">Agentic AI is generating your question...</p>
+                    <p className="font-medium">AI is generating your question...</p>
                     <p className="text-xs text-purple-600 mt-1">
                       This may take a moment for the best quality questions
                     </p>
@@ -632,7 +425,7 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
                 <button
                   onClick={checkBackendConnection}
                   className="p-3 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all"
-                  title="Check AI Connection"
+                  title="Check Backend Connection"
                 >
                   <Wifi className="w-5 h-5" />
                 </button>
@@ -651,7 +444,7 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">AI Interviewer</h3>
                     <p className="text-sm text-gray-600">
-                      {isConnected ? (simulator.isUsingAgentic() ? 'Agentic AI-Powered Assistant' : 'LLM-Powered Assistant') : 'Practice Interview Assistant'}
+                      {isConnected ? 'Python Backend AI Assistant' : 'Practice Interview Assistant'}
                     </p>
                   </div>
                 </div>
@@ -662,7 +455,7 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
                       <Loader className="w-6 h-6 text-blue-600 animate-spin mr-3" />
                       <span className="text-gray-600">
                         {isLoadingQuestion 
-                          ? 'Agentic AI is crafting your personalized question...' 
+                          ? 'AI is crafting your personalized question...' 
                           : isConnected 
                             ? 'AI is generating your next question...' 
                             : 'Preparing next question...'
@@ -769,30 +562,28 @@ const TextInterviewScreen: React.FC<InterviewScreenProps> = ({
                 Your notes will be saved and available in the analytics section.
               </div>
 
-              {/* Performance Stats */}
-              {simulator.isUsingAgentic() && (
-                <div className="mt-6 p-4 bg-purple-50 rounded-xl">
-                  <h4 className="font-medium text-purple-900 mb-2">Performance Mode</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-purple-700">AI Mode:</span>
-                      <span className="text-purple-900 font-medium">Agentic</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-purple-700">Optimization:</span>
-                      <span className="text-purple-900 font-medium">Enabled</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-purple-700">Pre-generation:</span>
-                      <span className="text-purple-900 font-medium">Active</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-purple-700">Max Questions:</span>
-                      <span className="text-purple-900 font-medium">{progress.total}</span>
-                    </div>
+              {/* Backend Connection Status */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+                <h4 className="font-medium text-blue-900 mb-2">Backend Status</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Python Backend:</span>
+                    <span className={isConnected ? 'text-green-600' : 'text-red-600'}>
+                      {isConnected ? 'Connected' : 'Disconnected'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">AI Mode:</span>
+                    <span className="text-blue-900 font-medium">
+                      {isConnected ? 'Python AI' : 'Fallback'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Max Questions:</span>
+                    <span className="text-blue-900 font-medium">{progress.total}</span>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

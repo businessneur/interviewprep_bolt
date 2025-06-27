@@ -1,6 +1,6 @@
-# AI Interview Practice Platform with LiveKit Voice Integration
+# AI Interview Practice Platform
 
-A comprehensive AI-powered interview practice application that uses Large Language Models (LLMs) and LiveKit for real-time voice interviews, generating dynamic, contextual interview questions and providing intelligent feedback.
+A comprehensive AI-powered interview practice application that integrates with a Python backend for intelligent question generation and response analysis.
 
 ## Features
 
@@ -12,19 +12,12 @@ A comprehensive AI-powered interview practice application that uses Large Langua
 - **Protected Routes** - interview features only available when logged in
 - **User Profile Management** with avatar support
 
-### 🎙️ **LiveKit Voice Interviews**
-- **Real-time voice communication** using LiveKit WebRTC infrastructure
-- **AI-powered voice interviewer** that speaks questions and listens to responses
-- **Speech-to-text transcription** for response analysis
-- **Low-latency audio streaming** for natural conversation flow
-- **Connection recovery** and session management
-- **Multi-participant support** for group interviews (future enhancement)
-
-### 🤖 **LLM-Powered Question Generation**
-- Dynamic question generation based on your specific topic, experience level, and interview style
-- Contextual follow-up questions that adapt to your responses
-- Company-specific scenarios when target company is provided
-- Support for multiple LLM providers (OpenAI GPT-4, Anthropic Claude, Google Gemini)
+### 🤖 **AI-Powered Interviews**
+- **Python Backend Integration** for intelligent question generation
+- **Dynamic question generation** based on your specific topic, experience level, and interview style
+- **Contextual follow-up questions** that adapt to your responses
+- **Company-specific scenarios** when target company is provided
+- **Real-time response analysis** and feedback
 
 ### 🎯 **Interview Types**
 - **Technical Interviews**: Code problems, system design, technical concepts
@@ -38,24 +31,22 @@ A comprehensive AI-powered interview practice application that uses Large Langua
 - Personalized feedback and improvement suggestions
 - Detailed question-by-question review
 - Performance tracking across multiple dimensions
-- Voice interview session recordings and playback
+- Comprehensive interview session reports
 
 ### 🎙️ **Advanced Interface**
-- **Voice-first interview experience** with LiveKit integration
-- Speech-to-text input capability with fallback text input
-- Real-time interview simulation with audio feedback
+- **Text-based interview experience** with speech-to-text support
+- Real-time interview simulation with intelligent feedback
 - Progress tracking and timer
-- Note-taking functionality during voice interviews
+- Note-taking functionality during interviews
 - Responsive design for all devices
 
 ## Setup Instructions
 
 ### Prerequisites
 - Node.js 18+ and npm
-- An API key from either OpenAI, Anthropic, or Google Gemini
-- LiveKit Cloud account or self-hosted LiveKit server (for voice interviews)
+- Python backend server (from aceInterview repository)
 - Supabase account (for authentication)
-- Microphone access for voice interviews
+- Microphone access for speech-to-text features
 
 ### 1. Clone and Install Dependencies
 ```bash
@@ -71,30 +62,12 @@ cp .env.example .env
 
 Edit `.env` file with your configuration:
 ```env
-# Choose your LLM provider
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# OR use OpenAI
-# LLM_PROVIDER=openai
-# OPENAI_API_KEY=your_openai_api_key_here
-
-# OR use Anthropic Claude
-# LLM_PROVIDER=anthropic
-# ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# LiveKit Configuration (required for voice interviews)
-LIVEKIT_API_KEY=your_livekit_api_key
-LIVEKIT_API_SECRET=your_livekit_api_secret
-LIVEKIT_WS_URL=wss://your-livekit-server.com
+# Python Backend Configuration
+VITE_PYTHON_API_URL=http://localhost:8000/api
 
 # Supabase Configuration for Authentication
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Server Configuration
-PORT=3001
-VITE_API_URL=http://localhost:3001/api
 ```
 
 ### 3. Supabase Setup
@@ -146,61 +119,67 @@ CREATE POLICY "Users can insert own profile" ON profiles
    - Add authorized redirect URI: `https://your-project-ref.supabase.co/auth/v1/callback`
 4. Copy Client ID and Client Secret to Supabase
 
-### 4. LiveKit Setup (Optional - for Voice Interviews)
+### 4. Python Backend Setup
 
-#### Option A: LiveKit Cloud (Recommended)
-1. Sign up at [LiveKit Cloud](https://cloud.livekit.io/)
-2. Create a new project
-3. Copy your API Key, Secret Key, and WebSocket URL
-4. Add them to your `.env` file
+This frontend is designed to work with the Python backend from the aceInterview repository:
 
-#### Option B: Self-hosted LiveKit
-1. Follow the [LiveKit deployment guide](https://docs.livekit.io/deploy/)
-2. Configure your server URL in the `.env` file
-3. Set up your API credentials
-
-### 5. Start the Application
-
-**Full Mode (with LLM backend, Authentication, and LiveKit):**
+1. Clone the Python backend:
 ```bash
-# Terminal 1: Start the backend server
-npm run server
-
-# Terminal 2: Start the frontend development server
-npm run dev
+git clone https://github.com/sandeep066/aceInterview
+cd aceInterview
 ```
 
-**Text-only Mode (without LiveKit):**
+2. Follow the Python backend setup instructions in that repository
+
+3. Start the Python backend server (typically on port 8000)
+
+### 5. Start the Frontend Application
+
 ```bash
-# Set LIVEKIT_API_KEY="" in .env to disable voice features
-npm run server  # Terminal 1
-npm run dev     # Terminal 2
+# Start the frontend development server
+npm run dev
 ```
 
 ### 6. Access the Application
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:3001
-- Health Check: http://localhost:3001/api/health
-- LiveKit Config Check: http://localhost:3001/api/livekit/config
+- Python Backend: http://localhost:8000 (or your configured port)
 
-## Authentication Flow
+## Architecture
 
-### Registration Process
-1. User fills out registration form with email, password, and full name
-2. System checks for duplicate emails and prevents registration
-3. Confirmation email sent to user
-4. User clicks confirmation link to activate account
-5. User can then sign in
+### Frontend (React + TypeScript + Supabase)
+- **Authentication Screens**: Login, register, forgot password with beautiful UI
+- **Configuration Screen**: Interview setup and customization
+- **Interview Screen**: Text-based interview with speech-to-text support
+- **Analytics Screen**: Performance analysis with detailed insights
+- **Header Component**: User profile dropdown with sign-out functionality
 
-### Sign-In Options
-1. **Email/Password**: Traditional authentication
-2. **Google OAuth**: One-click sign-in (when configured)
+### Backend Integration (Python)
+- **API Service**: Unified interface for Python backend communication
+- **Case Conversion**: Automatic conversion between camelCase (frontend) and snake_case (backend)
+- **Question Generation**: Dynamic question creation based on user configuration
+- **Response Analysis**: AI-powered feedback and scoring
+- **Analytics Engine**: Comprehensive performance evaluation
 
-### Error Handling
-- Duplicate email registration prevention
-- Clear error messages for authentication failures
-- Graceful handling of unconfirmed emails
-- Google OAuth configuration detection
+### Database (Supabase PostgreSQL)
+- **Authentication**: Built-in Supabase Auth with email/password and OAuth
+- **User Profiles**: Custom profiles table with user metadata
+- **Row Level Security**: Secure data access with RLS policies
+
+## API Integration
+
+The frontend communicates with the Python backend using a standardized API:
+
+### Key Endpoints
+- `POST /api/generate-question` - Generate interview questions
+- `POST /api/analyze-response` - Analyze user responses
+- `POST /api/generate-analytics` - Generate comprehensive analytics
+- `GET /api/health` - Backend health check
+
+### Data Flow
+1. Frontend sends requests in camelCase format
+2. API service converts to snake_case for Python backend
+3. Backend processes and returns data in snake_case
+4. Frontend converts back to camelCase for UI
 
 ## Troubleshooting
 
@@ -221,131 +200,66 @@ npm run dev     # Terminal 2
    ```
    **Solution**: The system now prevents this and shows a helpful error message with a link to the login page.
 
-3. **Email Confirmation Issues**:
-   - Check spam folder for confirmation emails
-   - Ensure email confirmation is enabled in Supabase settings
-   - Verify SMTP settings in Supabase
+### Backend Connection Issues
 
-### LiveKit Issues
-
-1. **LiveKit Connection Failed**:
-   ```bash
-   # Check LiveKit configuration
-   curl http://localhost:3001/api/livekit/config
-   
-   # Verify environment variables
-   echo $LIVEKIT_API_KEY
-   echo $LIVEKIT_WS_URL
+1. **Python Backend Not Connected**:
    ```
+   Error: "Failed to fetch" or connection timeouts
+   ```
+   **Solution**: 
+   - Ensure Python backend is running on the correct port
+   - Check VITE_PYTHON_API_URL in .env file
+   - Verify CORS settings in Python backend
 
-2. **Audio Not Working**:
-   - Check microphone permissions in browser
-   - Verify HTTPS connection (required for microphone access)
-   - Test audio devices in browser settings
+2. **API Endpoint Errors**:
+   ```
+   Error: 404 or 500 responses from backend
+   ```
+   **Solution**:
+   - Check Python backend logs for errors
+   - Verify API endpoint URLs match between frontend and backend
+   - Ensure proper request/response format
 
 ### General Issues
 
-1. **Backend Not Starting**:
-   - Ensure all required environment variables are set
-   - Check for port conflicts (default: 3001)
-   - Verify API keys are valid
+1. **Frontend Build Errors**:
+   - Ensure all dependencies are installed: `npm install`
+   - Check for TypeScript errors: `npm run lint`
+   - Clear node_modules and reinstall if needed
 
-2. **Database Connection Issues**:
-   - Verify Supabase URL and anon key
-   - Check if profiles table exists
-   - Ensure RLS policies are set up correctly
+2. **Environment Variables**:
+   - Verify all required variables are set in .env
+   - Restart development server after changing .env
+   - Check variable names match exactly (case-sensitive)
 
-## Architecture
+## Development
 
-### Frontend (React + TypeScript + Supabase + LiveKit)
-- **Authentication Screens**: Login, register, forgot password with beautiful UI
-- **Configuration Screen**: Interview setup and voice/text mode selection
-- **Voice Interview Screen**: Real-time voice communication with AI interviewer
-- **Text Interview Screen**: Traditional text-based interview (fallback)
-- **Analytics Screen**: Performance analysis with voice session insights
-- **Header Component**: User profile dropdown with sign-out functionality
+### Project Structure
+```
+src/
+├── components/          # React components
+│   ├── auth/           # Authentication components
+│   └── layout/         # Layout components
+├── hooks/              # Custom React hooks
+├── services/           # API services
+├── types/              # TypeScript type definitions
+├── utils/              # Utility functions
+└── lib/                # External library configurations
+```
 
-### Backend (Node.js + Express + LiveKit Server SDK)
-- **LLM Service**: Unified interface for multiple LLM providers
-- **LiveKit Service**: Room management, token generation, webhook handling
-- **Voice Interview Service**: Session management, audio processing, real-time question flow
-- **Question Generation**: Context-aware question creation with voice timing
-- **Response Analysis**: AI-powered feedback with audio quality metrics
-- **Analytics Engine**: Comprehensive performance evaluation including voice metrics
-
-### Database (Supabase PostgreSQL)
-- **Authentication**: Built-in Supabase Auth with email/password and OAuth
-- **User Profiles**: Custom profiles table with user metadata
-- **Row Level Security**: Secure data access with RLS policies
-
-## Security Features
-
-### Authentication Security
-- **Supabase Auth**: Industry-standard authentication with JWT tokens
-- **Email Verification**: Required for new accounts
-- **Password Requirements**: Minimum 6 characters
-- **OAuth Security**: Secure Google OAuth integration
-- **Session Management**: Automatic token refresh and secure logout
-
-### API Security
-- **Protected Routes**: Interview features require authentication
-- **CORS Configuration**: Proper cross-origin setup
-- **Input Validation**: Comprehensive request validation
-- **Rate Limiting**: Protection against API abuse
-
-### LiveKit Security
-- **Token-based Authentication**: Secure room access control
-- **Time-limited Tokens**: Automatic token expiration
-- **Room Isolation**: Secure participant separation
-- **Webhook Verification**: Signed webhook payloads
-
-## Deployment
-
-### Production Deployment
-1. **Frontend Deployment**:
-   ```bash
-   npm run build
-   # Deploy dist/ folder to your hosting provider
-   ```
-
-2. **Backend Deployment**:
-   ```bash
-   # Deploy to your preferred platform (AWS, GCP, Azure, etc.)
-   # Ensure all environment variables are set in production
-   ```
-
-3. **Supabase Configuration**:
-   - Update allowed origins in Supabase settings
-   - Configure production OAuth redirect URLs
-   - Set up custom SMTP for production emails
-
-4. **LiveKit Configuration**:
-   - Use LiveKit Cloud for production
-   - Configure proper CORS and security settings
-   - Set up webhook endpoints for monitoring
+### Key Files
+- `src/services/apiService.ts` - Main API communication layer
+- `src/utils/caseConversion.ts` - Data format conversion utilities
+- `src/components/InterviewScreen.tsx` - Main interview interface
+- `src/utils/aiSimulator.ts` - Interview simulation logic
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests for authentication and voice features if applicable
+4. Add tests if applicable
 5. Submit a pull request
-
-### Development Setup
-```bash
-# Install dependencies
-npm install
-
-# Start development with hot reload
-npm run dev
-
-# Run backend server
-npm run server
-
-# Test authentication flow
-# Test LiveKit integration
-```
 
 ## License
 
@@ -355,7 +269,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 For issues related to:
 - **Authentication**: Check Supabase dashboard and logs
-- **LiveKit Integration**: Check [LiveKit Documentation](https://docs.livekit.io/)
-- **Voice Features**: Review browser microphone permissions
-- **API Issues**: Check backend logs and health endpoints
+- **Python Backend**: Check the aceInterview repository documentation
+- **API Integration**: Review network requests in browser dev tools
 - **General Support**: Create an issue in this repository
