@@ -47,8 +47,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onModeChange, onAuthSu
     const { error } = await signInWithGoogle();
     
     if (error) {
-      if (error.message.includes('provider is not enabled')) {
-        setError('Google sign-in is not configured. Please use email/password or contact support.');
+      if (error.message.includes('provider is not enabled') || error.message.includes('Unsupported provider')) {
+        setError('Google sign-in is not configured in Supabase. Please use email/password or contact support to enable Google OAuth.');
       } else {
         setError(error.message);
       }
@@ -101,6 +101,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onModeChange, onAuthSu
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
           {error}
+          {error.includes('Google sign-in is not configured') && (
+            <div className="mt-2 text-xs text-red-600">
+              <strong>To enable Google OAuth:</strong>
+              <ol className="list-decimal list-inside mt-1 space-y-1">
+                <li>Go to your Supabase dashboard</li>
+                <li>Navigate to Authentication → Providers</li>
+                <li>Enable Google provider and add your OAuth credentials</li>
+              </ol>
+            </div>
+          )}
         </div>
       )}
 

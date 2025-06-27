@@ -59,12 +59,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onModeChange, on
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
-      if (error.message.includes('User already registered')) {
+      if (error.message.includes('User already registered') || 
+          error.message.includes('already been registered') ||
+          error.message.includes('duplicate key value') ||
+          error.message.includes('already exists')) {
         setError('An account with this email already exists. Please sign in instead or use a different email.');
-      } else if (error.message.includes('already been registered')) {
-        setError('This email is already registered. Please sign in instead or use a different email.');
-      } else if (error.message.includes('duplicate key value')) {
-        setError('An account with this email already exists. Please sign in instead.');
       } else {
         setError(error.message);
       }
@@ -82,8 +81,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onModeChange, on
     const { error } = await signInWithGoogle();
     
     if (error) {
-      if (error.message.includes('provider is not enabled')) {
-        setError('Google sign-up is not configured. Please use email/password or contact support.');
+      if (error.message.includes('provider is not enabled') || error.message.includes('Unsupported provider')) {
+        setError('Google sign-up is not configured in Supabase. Please use email/password or contact support to enable Google OAuth.');
       } else {
         setError(error.message);
       }
@@ -165,6 +164,16 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onModeChange, on
               >
                 Go to login page
               </button>
+            </div>
+          )}
+          {error.includes('Google sign-up is not configured') && (
+            <div className="mt-2 text-xs text-red-600">
+              <strong>To enable Google OAuth:</strong>
+              <ol className="list-decimal list-inside mt-1 space-y-1">
+                <li>Go to your Supabase dashboard</li>
+                <li>Navigate to Authentication → Providers</li>
+                <li>Enable Google provider and add your OAuth credentials</li>
+              </ol>
             </div>
           )}
         </div>
